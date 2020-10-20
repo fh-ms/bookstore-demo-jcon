@@ -11,7 +11,15 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.QueryBuilder;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
+import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
+import one.microstream.demo.bookstore.data.Index.EntityMatcher;
 import one.microstream.persistence.types.Persister;
 
 public class Books
@@ -24,6 +32,10 @@ public class Books
 	private final Map<Genre, List<Book>>     genreToBooks     = new HashMap<>(512);
 	private final Map<Publisher, List<Book>> publisherToBooks = new HashMap<>(1024);
 	private final Map<Language, List<Book>>  languageToBooks  = new HashMap<>(32);
+	/*
+	 * Transient means it is not persisted by MicroStream, but created on demand.
+	 */
+	private transient volatile Index<Book>   index;
 	
 	public Books()
 	{
@@ -40,6 +52,7 @@ public class Books
 		final Persister persister
 	)
 	{
+		this.ensureIndex().add(book);
 		this.addToCollections(book);
 		this.storeCollections(persister);
 	}
@@ -54,6 +67,7 @@ public class Books
 		final Persister persister
 	)
 	{
+		this.ensureIndex().addAll(books);
 		books.forEach(this::addToCollections);
 		this.storeCollections(persister);
 	}
@@ -232,4 +246,51 @@ public class Books
 		return streamFunction.apply(this.languageToBooks.keySet().stream());
 	}
 
+	public List<Book> searchByTitle(
+		final String queryText
+	)
+	{
+		final Index<Book>  index        = this.ensureIndex();
+		final QueryBuilder queryBuilder = index.createQueryBuilder();
+		final Query        query        = queryBuilder.createPhraseQuery("title", queryText);
+		return index.search(query, Integer.MAX_VALUE);
+	}
+
+	private Index<Book> ensureIndex()
+	{
+		if(this.index == null)
+		{
+			this.index = this.createIndex();
+		}
+		return this.index;
+	}
+
+	private Index<Book> createIndex()
+	{
+		final DocumentPopulator<Book> documentPopulator = (document, book) -> {
+			document.add(new StringField("isbn13", book.isbn13(), Store.YES));
+			document.add(new TextField("title", book.title(), Store.YES));
+			document.add(new TextField("author", book.author().name(), Store.YES));
+			document.add(new TextField("genre", book.genre().name(), Store.YES));
+			document.add(new TextField("publisher", book.publisher().name(), Store.YES));
+		};
+
+		final EntityMatcher<Book> entityMatcher = document ->
+			this.isbn13ToBook.get(document.get("isbn13"))
+		;
+
+		final Index<Book> index = new Index<>(
+			Book.class,
+			documentPopulator,
+			entityMatcher
+		);
+
+		if(index.size() == 0 && this.bookCount() > 0)
+		{
+			index.addAll(this.isbn13ToBook.values());
+		}
+
+		return index;
+	}
+	
 }
