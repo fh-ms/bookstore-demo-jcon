@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.persistence.types.Persister;
@@ -65,6 +66,15 @@ public class Customers
 	public Customer ofId(final int customerId)
 	{
 		return this.customers.get(customerId);
+	}
+	
+	public <T> T compute(
+		final Function<Stream<Customer>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(
+			this.customers.values().parallelStream()
+		);
 	}
 
 }

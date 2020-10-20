@@ -3,6 +3,8 @@ package one.microstream.demo.bookstore.data;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.persistence.types.Persister;
@@ -57,6 +59,37 @@ public class Shops
 	public void clear()
 	{
 		this.shops.forEach(Shop::clear);
+	}
+	
+	public <T> T compute(
+		final Function<Stream<Shop>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(
+			this.shops.parallelStream()
+		);
+	}
+
+	public <T> T computeInventory(
+		final Function<Stream<InventoryItem>, T> function
+	)
+	{
+		return function.apply(
+			this.shops.parallelStream().flatMap(shop ->
+				shop.inventory().compute(entries ->
+					entries.map(entry -> new InventoryItem(shop, entry.getKey(), entry.getValue()))
+				)
+			)
+		);
+	}
+
+	public Shop ofName(final String name)
+	{
+		return this.shops.stream()
+			.filter(shop -> shop.name().equals(name))
+			.findAny()
+			.orElse(null)
+		;
 	}
 
 }

@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class Inventory
 {
@@ -47,6 +49,15 @@ public class Inventory
 	public List<Book> books()
 	{
 		return this.inventoryMap.keySet().stream().collect(toList());
+	}
+	
+	public <T> T compute(
+		final Function<Stream<Entry<Book, Integer>>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(
+			this.inventoryMap.entrySet().stream()
+		);
 	}
 
 }

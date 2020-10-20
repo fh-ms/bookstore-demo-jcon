@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.persistence.types.Persister;
@@ -141,6 +143,93 @@ public class Books
 	)
 	{
 		return this.isbn13ToBook.get(isbn13);
+	}
+	
+	public <T> T compute(
+		final Function<Stream<Book>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(this.isbn13ToBook.values().stream());
+	}
+
+	public <T> T computeByAuthor(
+		final Author author,
+		final Function<Stream<Book>, T> streamFunction
+	)
+	{
+		final List<Book> list = this.authorToBooks.get(author);
+		return streamFunction.apply(
+			list != null
+				? list.stream()
+				: Stream.empty()
+		);
+	}
+
+	public  <T> T computeByGenre(
+		final Genre genre,
+		final Function<Stream<Book>, T> streamFunction
+	)
+	{
+		final List<Book> list = this.genreToBooks.get(genre);
+		return streamFunction.apply(
+			list != null
+				? list.stream()
+				: Stream.empty()
+		);
+	}
+
+	public <T> T computeByPublisher(
+		final Publisher publisher,
+		final Function<Stream<Book>, T> streamFunction
+	)
+	{
+		final List<Book> list = this.publisherToBooks.get(publisher);
+		return streamFunction.apply(
+			list != null
+				? list.stream()
+				: Stream.empty()
+		);
+	}
+
+	public <T> T computeByLanguage(
+		final Language language,
+		final Function<Stream<Book>, T> streamFunction
+	)
+	{
+		final List<Book> list = this.languageToBooks.get(language);
+		return streamFunction.apply(
+			list != null
+				? list.stream()
+				: Stream.empty()
+		);
+	}
+	
+	public <T> T computeGenres(
+		final Function<Stream<Genre>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(this.genreToBooks.keySet().stream());
+	}
+
+	public <T> T computeAuthors(
+		final Function<Stream<Author>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(this.authorToBooks.keySet().stream());
+	}
+
+	public <T> T computePublishers(
+		final Function<Stream<Publisher>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(this.publisherToBooks.keySet().stream());
+	}
+
+	public <T> T computeLanguages(
+		final Function<Stream<Language>, T> streamFunction
+	)
+	{
+		return streamFunction.apply(this.languageToBooks.keySet().stream());
 	}
 
 }

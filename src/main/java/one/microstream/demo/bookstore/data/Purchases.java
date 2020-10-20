@@ -1,7 +1,14 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toList;
+import static one.microstream.demo.bookstore.util.CollectionUtils.ensureParallelStream;
+import static one.microstream.demo.bookstore.util.CollectionUtils.maxKey;
+import static one.microstream.demo.bookstore.util.CollectionUtils.summingMonetaryAmount;
 import static one.microstream.demo.bookstore.util.LazyUtils.clearIfStored;
+import static org.javamoney.moneta.function.MonetaryFunctions.summarizingMonetary;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import javax.money.MonetaryAmount;
 
 import com.google.common.collect.Range;
 
@@ -91,6 +103,42 @@ public class Purchases
 		{
 			map.values().forEach(lazy ->
 				clearIfStored(lazy).ifPresent(List::clear)
+			);
+		}
+		
+		Stream<Purchase> byShop(
+			final Shop shop
+		)
+		{
+			return ensureParallelStream(
+				Lazy.get(this.shopToPurchases.get(shop))
+			);
+		}
+
+		Stream<Purchase> byShops(
+			final Predicate<Shop> shopSelector
+		)
+		{
+			return this.shopToPurchases.entrySet().parallelStream()
+				.filter(e -> shopSelector.test(e.getKey()))
+				.flatMap(e -> ensureParallelStream(Lazy.get(e.getValue())));
+		}
+
+		Stream<Purchase> byEmployee(
+			final Employee employee
+		)
+		{
+			return ensureParallelStream(
+				Lazy.get(this.employeeToPurchases.get(employee))
+			);
+		}
+
+		Stream<Purchase> byCustomer(
+			final Customer customer
+		)
+		{
+			return ensureParallelStream(
+				Lazy.get(this.customerToPurchases.get(customer))
 			);
 		}
 		
@@ -175,4 +223,254 @@ public class Purchases
 		return Range.closed(summary.getMin(), summary.getMax());
 	}
 
+	public <T> T computeByYear(
+		final int year,
+		final Function<Stream<Purchase>, T> streamFunction
+	)
+	{
+		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+		return streamFunction.apply(
+			yearlyPurchases == null
+				? Stream.empty()
+				: yearlyPurchases.shopToPurchases.values().parallelStream()
+					.map(l -> l.get())
+					.flatMap(List::stream)
+		);
+	}
+
+	public <T> T computeByShopAndYear(
+		final Shop shop,
+		final int year,
+		final Function<Stream<Purchase>, T> streamFunction
+	)
+	{
+		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+		return streamFunction.apply(
+			yearlyPurchases == null
+				? Stream.empty()
+				: yearlyPurchases.byShop(shop)
+		);
+	}
+
+	public <T> T computeByShopsAndYear(
+		final Predicate<Shop> shopSelector,
+		final int year,
+		final Function<Stream<Purchase>, T> streamFunction
+	)
+	{
+		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+		return streamFunction.apply(
+			yearlyPurchases == null
+				? Stream.empty()
+				: yearlyPurchases.byShops(shopSelector)
+		);
+	}
+
+	public <T> T computeByEmployeeAndYear(
+		final Employee employee,
+		final int year,
+		final Function<Stream<Purchase>, T> streamFunction
+	)
+	{
+		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+		return streamFunction.apply(
+			yearlyPurchases == null
+				? Stream.empty()
+				: yearlyPurchases.byEmployee(employee)
+		);
+	}
+
+	public <T> T computeByCustomerAndYear(
+		final Customer customer,
+		final int year,
+		final Function<Stream<Purchase>, T> streamFunction
+	)
+	{
+		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+		return streamFunction.apply(
+			yearlyPurchases == null
+				? Stream.empty()
+				: yearlyPurchases.byCustomer(customer)
+		);
+	}
+
+	public List<BookSales> bestSellerList(
+		final int year
+	)
+	{
+		return this.computeByYear(
+			year,
+			this::bestSellerList
+		);
+	}
+
+	public List<BookSales> bestSellerList(
+		final int year,
+		final Country country
+	)
+	{
+		return this.computeByShopsAndYear(
+			shopInCountryPredicate(country),
+			year,
+			this::bestSellerList
+		);
+	}
+
+	private List<BookSales> bestSellerList(
+		final Stream<Purchase> purchases
+	)
+	{
+		return purchases
+			.flatMap(Purchase::items)
+			.collect(
+				groupingBy(
+					PurchaseItem::book,
+					summingInt(PurchaseItem::amount)
+				)
+			)
+			.entrySet()
+			.stream()
+			.map(e -> new BookSales(e.getKey(), e.getValue()))
+			.sorted()
+			.collect(toList());
+	}
+
+	public long countPurchasesOfForeigners(
+		final int year
+	)
+	{
+		return this.computePurchasesOfForeigners(
+			year,
+			purchases -> purchases.count()
+		);
+	}
+
+	public List<Purchase> purchasesOfForeigners(
+		final int year
+	)
+	{
+		return this.computePurchasesOfForeigners(
+			year,
+			purchases -> purchases.collect(toList())
+		);
+	}
+
+	private <T> T computePurchasesOfForeigners(
+		final int year,
+		final Function <Stream<Purchase>, T> streamFunction
+	)
+	{
+		return this.computeByYear(
+			year,
+			purchases -> streamFunction.apply(
+				purchases.filter(
+					purchaseOfForeignerPredicate()
+				)
+			)
+		);
+	}
+
+	public long countPurchasesOfForeigners(
+		final int year,
+		final Country country
+	)
+	{
+		return this.computePurchasesOfForeigners(
+			year,
+			country,
+			purchases -> purchases.count()
+		);
+	}
+
+	public List<Purchase> purchasesOfForeigners(
+		final int year,
+		final Country country
+	)
+	{
+		return this.computePurchasesOfForeigners(
+			year,
+			country,
+			purchases -> purchases.collect(toList())
+		);
+	}
+
+	private <T> T computePurchasesOfForeigners(
+		final int year,
+		final Country country,
+		final Function <Stream<Purchase>, T> streamFunction
+	)
+	{
+		return this.computeByShopsAndYear(
+			shopInCountryPredicate(country),
+			year,
+			purchases -> streamFunction.apply(
+				purchases.filter(
+					purchaseOfForeignerPredicate()
+				)
+			)
+		);
+	}
+
+	private static Predicate<Shop> shopInCountryPredicate(final Country country)
+	{
+		return shop -> shop.address().city().state().country() == country;
+	}
+
+	private static Predicate<? super Purchase> purchaseOfForeignerPredicate()
+	{
+		return p -> p.customer().address().city() != p.shop().address().city();
+	}
+
+	public MonetaryAmount revenueOfShopInYear(
+		final Shop shop,
+		final int year
+	)
+	{
+		return this.computeByShopAndYear(
+			shop,
+			year,
+			purchases -> purchases
+				.map(Purchase::total)
+				.collect(summarizingMonetary(BookStoreDemo.currencyUnit()))
+				.getSum()
+		);
+	}
+
+	public Employee employeeOfTheYear(
+		final int year
+	)
+	{
+		return this.computeByYear(
+			year,
+			bestPerformingEmployeeFunction()
+		);
+	}
+
+	public Employee employeeOfTheYear(
+		final int year,
+		final Country country
+	)
+	{
+		return this.computeByShopsAndYear(
+			shopInCountryPredicate(country) ,
+			year,
+			bestPerformingEmployeeFunction()
+		);
+	}
+
+	private static Function<Stream<Purchase>, Employee> bestPerformingEmployeeFunction()
+	{
+		return purchases -> maxKey(
+			purchases.collect(
+				groupingBy(
+					Purchase::employee,
+					summingMonetaryAmount(
+						BookStoreDemo.currencyUnit(),
+						Purchase::total
+					)
+				)
+			)
+		);
+	}
+	
 }
