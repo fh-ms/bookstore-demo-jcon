@@ -1,6 +1,11 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
+import static one.microstream.demo.bookstore.util.ValidationUtils.validateIsbn13;
+
 import javax.money.MonetaryAmount;
 
 public class Book
@@ -26,14 +31,14 @@ public class Book
 	)
 	{
 		super();
-		this.isbn13        = isbn13;
-		this.title         = title;
-		this.author        = author;
-		this.genre         = genre;
-		this.publisher     = publisher;
-		this.language      = language;
-		this.purchasePrice = purchasePrice;
-		this.retailPrice   = retailPrice;
+		this.isbn13        = validateIsbn13(isbn13);
+		this.title         = requireNonBlank(title,         () -> "Title cannot be empty"                );
+		this.author        = requireNonNull(author,         () -> "Author cannot be null"                );
+		this.genre         = requireNonNull(genre,          () -> "Genre cannot be null"                 );
+		this.publisher     = requireNonNull(publisher,      () -> "Publisher cannot be null"             );
+		this.language      = requireNonNull(language,       () -> "Language cannot be null"              );
+		this.purchasePrice = requirePositive(purchasePrice, () -> "Purchase price must be greater than 0");
+		this.retailPrice   = requirePositive(retailPrice,   () -> "Retail price must be greater than 0"  );
 	}
 
 	public String isbn13()

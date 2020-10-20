@@ -1,6 +1,8 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 
 public class Author
 {
@@ -13,8 +15,8 @@ public class Author
 	)
 	{
 		super();
-		this.name    = name;
-		this.address = address;
+		this.name    = requireNonBlank(name,   () -> "Name cannot be empty"  );
+		this.address = requireNonNull(address, () -> "Address cannot be null");
 	}
 
 	public String name()

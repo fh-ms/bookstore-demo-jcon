@@ -1,6 +1,8 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+
 public class Address
 {
 	private final String address;
@@ -16,10 +18,10 @@ public class Address
 	)
 	{
 		super();
-		this.address  = address;
-		this.address2 = address2;
-		this.zipCode  = zipCode;
-		this.city     = city;
+		this.address  = requireNonNull(address , () -> "Address cannot be null" );
+		this.address2 = requireNonNull(address2, () -> "Address2 cannot be null");
+		this.zipCode  = requireNonNull(zipCode , () -> "ZipCode cannot be null" );
+		this.city     = requireNonNull(city    , () -> "City cannot be null"    );
 	}
 
 	public String address()

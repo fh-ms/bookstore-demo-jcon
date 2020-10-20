@@ -1,6 +1,8 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Locale;
 
 public class Language
@@ -12,7 +14,7 @@ public class Language
 	)
 	{
 		super();
-		this.locale = locale;
+		this.locale = requireNonNull(locale, () -> "Locale cannot be null");
 	}
 	
 	public Locale locale()

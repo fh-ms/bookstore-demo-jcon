@@ -1,6 +1,10 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
+
 public class Customer
 {
 	private final int     customerId;
@@ -14,9 +18,9 @@ public class Customer
 	)
 	{
 		super();
-		this.name       = name;
-		this.address    = address;
-		this.customerId = customerId;
+		this.name       = requireNonBlank(name,       () -> "Name cannot be empty"        );
+		this.address    = requireNonNull (address,    () -> "Address cannot be null"      );
+		this.customerId = requirePositive(customerId, () -> "Customer id must be positive");
 	}
 
 	public int customerId()

@@ -1,7 +1,9 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.LazyUtils.clearIfStored;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,13 +24,13 @@ public class Shop
 	)
 	{
 		super();
-		this.name      = name;
-		this.address   = address;
+		this.name      = requireNonBlank(name,    () -> "Name cannot be empty"  );
+		this.address   = requireNonNull (address, () -> "Address cannot be null");
 		this.employees = new ArrayList<>();
 		this.inventory = Lazy.Reference(new Inventory());
 	}
 
-	public Shop(
+	Shop(
 		final String         name,
 		final Address        address,
 		final List<Employee> employees,

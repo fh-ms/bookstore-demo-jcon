@@ -1,6 +1,9 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonEmpty;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +30,11 @@ public class Purchase
 	)
 	{
 		super();
-		this.shop      = shop;
-		this.employee  = employee;
-		this.customer  = customer;
-		this.timestamp = timestamp;
-		this.items     = new ArrayList<>(items);
+		this.shop      = requireNonNull(shop,      () -> "Shop cannot be null"     );
+		this.employee  = requireNonNull(employee,  () -> "Employee cannot be null" );
+		this.customer  = requireNonNull(customer,  () -> "Customer cannot be null" );
+		this.timestamp = requireNonNull(timestamp, () -> "Timestamp cannot be null");
+		this.items     = new ArrayList<>(requireNonEmpty(items, () -> "at least one item required in purchase"));
 	}
 
 	public Shop shop()

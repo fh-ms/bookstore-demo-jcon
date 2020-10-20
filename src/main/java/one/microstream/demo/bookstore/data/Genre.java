@@ -1,6 +1,8 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
+
 public class Genre
 {
 	private final String name;
@@ -10,7 +12,7 @@ public class Genre
 	)
 	{
 		super();
-		this.name = name;
+		this.name = requireNonBlank(name, () -> "Name cannot be empty");
 	}
 
 	public String name()

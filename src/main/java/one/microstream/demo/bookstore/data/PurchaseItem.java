@@ -1,5 +1,8 @@
 package one.microstream.demo.bookstore.data;
 
+import static java.util.Objects.requireNonNull;
+import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
+
 import javax.money.MonetaryAmount;
 
 
@@ -15,8 +18,8 @@ public class PurchaseItem
 	)
 	{
 		super();
-		this.book   = book;
-		this.amount = amount;
+		this.book   = requireNonNull(book,    () -> "Book cannot be null"             );
+		this.amount = requirePositive(amount, () -> "Amount must be greater than zero");
 		this.price  = book.retailPrice();
 	}
 
