@@ -20,9 +20,10 @@ import org.apache.lucene.util.QueryBuilder;
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
 import one.microstream.demo.bookstore.data.Index.EntityMatcher;
+import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.persistence.types.Persister;
 
-public class Books
+public class Books extends ReadWriteLocked
 {
 	/*
 	 * Multiple maps holding references to the books, for a faster lookup.
@@ -52,9 +53,12 @@ public class Books
 		final Persister persister
 	)
 	{
-		this.ensureIndex().add(book);
-		this.addToCollections(book);
-		this.storeCollections(persister);
+		this.write(() ->
+		{
+			this.ensureIndex().add(book);
+			this.addToCollections(book);
+			this.storeCollections(persister);
+		});
 	}
 	
 	public void addAll(final Collection<? extends Book> books)
@@ -67,9 +71,12 @@ public class Books
 		final Persister persister
 	)
 	{
-		this.ensureIndex().addAll(books);
-		books.forEach(this::addToCollections);
-		this.storeCollections(persister);
+		this.write(() ->
+		{
+			this.ensureIndex().addAll(books);
+			books.forEach(this::addToCollections);
+			this.storeCollections(persister);
+		});
 	}
 	
 	private void addToCollections(
@@ -109,61 +116,72 @@ public class Books
 
 	public List<Book> all()
 	{
-		return this.isbn13ToBook.values().stream()
-			.sorted()
-			.collect(toList())
-		;
+		return this.read(() ->
+			this.isbn13ToBook.values().stream()
+				.sorted()
+				.collect(toList())
+		);
 	}
 
 	public List<Author> authors()
 	{
-		return this.authorToBooks.keySet().stream()
-			.sorted()
-			.collect(toList())
-		;
+		return this.read(() ->
+			this.authorToBooks.keySet().stream()
+				.sorted()
+				.collect(toList())
+		);
 	}
 
 	public List<Genre> genres()
 	{
-		return this.genreToBooks.keySet().stream()
-			.sorted()
-			.collect(toList())
-		;
+		return this.read(() ->
+			this.genreToBooks.keySet().stream()
+				.sorted()
+				.collect(toList())
+		);
 	}
 
 	public List<Publisher> publishers()
 	{
-		return this.publisherToBooks.keySet().stream()
-			.sorted()
-			.collect(toList())
-		;
+		return this.read(() ->
+			this.publisherToBooks.keySet().stream()
+				.sorted()
+				.collect(toList())
+		);
 	}
 
 	public List<Language> languages()
 	{
-		return this.languageToBooks.keySet().stream()
-			.sorted()
-			.collect(toList())
-		;
+		return this.read(() ->
+			this.languageToBooks.keySet().stream()
+				.sorted()
+				.collect(toList())
+		);
 	}
 
 	public int bookCount()
 	{
-		return this.isbn13ToBook.size();
+		return this.read(
+			this.isbn13ToBook::size
+		);
 	}
 
 	public Book ofIsbn13(
 		final String isbn13
 	)
 	{
-		return this.isbn13ToBook.get(isbn13);
+		return this.read(() ->
+			this.isbn13ToBook.get(isbn13)
+		);
 	}
 	
 	public <T> T compute(
 		final Function<Stream<Book>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(this.isbn13ToBook.values().stream());
+		return this.read(() ->
+			streamFunction.apply(this.isbn13ToBook.values().stream())
+		);
 	}
 
 	public <T> T computeByAuthor(
@@ -171,12 +189,15 @@ public class Books
 		final Function<Stream<Book>, T> streamFunction
 	)
 	{
-		final List<Book> list = this.authorToBooks.get(author);
-		return streamFunction.apply(
-			list != null
-				? list.stream()
-				: Stream.empty()
-		);
+		return this.read(() ->
+		{
+			final List<Book> list = this.authorToBooks.get(author);
+			return streamFunction.apply(
+				list != null
+					? list.stream()
+					: Stream.empty()
+			);
+		});
 	}
 
 	public  <T> T computeByGenre(
@@ -184,12 +205,15 @@ public class Books
 		final Function<Stream<Book>, T> streamFunction
 	)
 	{
-		final List<Book> list = this.genreToBooks.get(genre);
-		return streamFunction.apply(
-			list != null
-				? list.stream()
-				: Stream.empty()
-		);
+		return this.read(() ->
+		{
+			final List<Book> list = this.genreToBooks.get(genre);
+			return streamFunction.apply(
+				list != null
+					? list.stream()
+					: Stream.empty()
+			);
+		});
 	}
 
 	public <T> T computeByPublisher(
@@ -197,12 +221,15 @@ public class Books
 		final Function<Stream<Book>, T> streamFunction
 	)
 	{
-		final List<Book> list = this.publisherToBooks.get(publisher);
-		return streamFunction.apply(
-			list != null
-				? list.stream()
-				: Stream.empty()
-		);
+		return this.read(() ->
+		{
+			final List<Book> list = this.publisherToBooks.get(publisher);
+			return streamFunction.apply(
+				list != null
+					? list.stream()
+					: Stream.empty()
+			);
+		});
 	}
 
 	public <T> T computeByLanguage(
@@ -210,40 +237,51 @@ public class Books
 		final Function<Stream<Book>, T> streamFunction
 	)
 	{
-		final List<Book> list = this.languageToBooks.get(language);
-		return streamFunction.apply(
-			list != null
-				? list.stream()
-				: Stream.empty()
-		);
+		return this.read(() ->
+		{
+			final List<Book> list = this.languageToBooks.get(language);
+			return streamFunction.apply(
+				list != null
+					? list.stream()
+					: Stream.empty()
+			);
+		});
 	}
 	
 	public <T> T computeGenres(
 		final Function<Stream<Genre>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(this.genreToBooks.keySet().stream());
+		return this.read(() ->
+			streamFunction.apply(this.genreToBooks.keySet().stream())
+		);
 	}
 
 	public <T> T computeAuthors(
 		final Function<Stream<Author>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(this.authorToBooks.keySet().stream());
+		return this.read(() ->
+			streamFunction.apply(this.authorToBooks.keySet().stream())
+		);
 	}
 
 	public <T> T computePublishers(
 		final Function<Stream<Publisher>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(this.publisherToBooks.keySet().stream());
+		return this.read(() ->
+			streamFunction.apply(this.publisherToBooks.keySet().stream())
+		);
 	}
 
 	public <T> T computeLanguages(
 		final Function<Stream<Language>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(this.languageToBooks.keySet().stream());
+		return this.read(() ->
+			streamFunction.apply(this.languageToBooks.keySet().stream())
+		);
 	}
 
 	public List<Book> searchByTitle(
@@ -258,11 +296,23 @@ public class Books
 
 	private Index<Book> ensureIndex()
 	{
-		if(this.index == null)
+		/*
+		 * Double-checked locking to reduce the overhead of acquiring a lock
+		 * by testing the locking criterion.
+		 * The field (this.index) has to be volatile.
+		 */
+		Index<Book> index = this.index;
+		if(index == null)
 		{
-			this.index = this.createIndex();
+			synchronized(this)
+			{
+				if((index = this.index) == null)
+				{
+					index = this.index = this.createIndex();
+				}
+			}
 		}
-		return this.index;
+		return index;
 	}
 
 	private Index<Book> createIndex()

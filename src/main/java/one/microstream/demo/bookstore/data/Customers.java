@@ -10,9 +10,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
+import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.persistence.types.Persister;
 
-public class Customers
+public class Customers extends ReadWriteLocked
 {
 	private final Map<Integer, Customer> customers = new HashMap<>();
 
@@ -31,8 +32,10 @@ public class Customers
 		final Persister persister
 	)
 	{
-		this.customers.put(customer.customerId(), customer);
-		persister.store(this.customers);
+		this.write(() -> {
+			this.customers.put(customer.customerId(), customer);
+			persister.store(this.customers);
+		});
 	}
 
 	public void addAll(final Collection<? extends Customer> customers)
@@ -45,35 +48,45 @@ public class Customers
 		final Persister persister
 	)
 	{
-		this.customers.putAll(
-			customers.stream().collect(
-				Collectors.toMap(Customer::customerId, Function.identity())
-			)
-		);
-		persister.store(this.customers);
+		this.write(() -> {
+			this.customers.putAll(
+				customers.stream().collect(
+					Collectors.toMap(Customer::customerId, Function.identity())
+				)
+			);
+			persister.store(this.customers);
+		});
 	}
 	
 	public int customerCount()
 	{
-		return this.customers.size();
+		return this.read(
+			this.customers::size
+		);
 	}
 
 	public List<Customer> all()
 	{
-		return new ArrayList<>(this.customers.values());
+		return this.read(() ->
+			new ArrayList<>(this.customers.values())
+		);
 	}
 
 	public Customer ofId(final int customerId)
 	{
-		return this.customers.get(customerId);
+		return this.read(() ->
+			this.customers.get(customerId)
+		);
 	}
 	
 	public <T> T compute(
 		final Function<Stream<Customer>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(
-			this.customers.values().parallelStream()
+		return this.read(() ->
+			streamFunction.apply(
+				this.customers.values().parallelStream()
+			)
 		);
 	}
 

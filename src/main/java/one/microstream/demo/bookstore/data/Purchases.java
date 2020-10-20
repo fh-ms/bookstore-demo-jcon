@@ -27,11 +27,12 @@ import javax.money.MonetaryAmount;
 import com.google.common.collect.Range;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
+import one.microstream.demo.bookstore.util.concurrent.ReadWriteLockedStriped;
 import one.microstream.persistence.types.Persister;
 import one.microstream.reference.Lazy;
 
 
-public class Purchases
+public class Purchases extends ReadWriteLockedStriped
 {
 	static class YearlyPurchases
 	{
@@ -158,20 +159,23 @@ public class Purchases
 		final Persister persister
 	)
 	{
-		final YearlyPurchases yearlyPurchases = new YearlyPurchases();
-		purchases.forEach(p -> yearlyPurchases.add(p, null));
+		return this.write(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = new YearlyPurchases();
+			purchases.forEach(p -> yearlyPurchases.add(p, null));
 
-		final Lazy<YearlyPurchases> lazy = Lazy.Reference(yearlyPurchases);
-		this.yearlyPurchases.put(year, lazy);
+			final Lazy<YearlyPurchases> lazy = Lazy.Reference(yearlyPurchases);
+			this.yearlyPurchases.put(year, lazy);
 
-		persister.store(this.yearlyPurchases);
+			persister.store(this.yearlyPurchases);
 
-		final Set<Customer> customers = new HashSet<>(yearlyPurchases.customerToPurchases.keySet());
+			final Set<Customer> customers = new HashSet<>(yearlyPurchases.customerToPurchases.keySet());
 
-		yearlyPurchases.clear();
-		lazy.clear();
+			yearlyPurchases.clear();
+			lazy.clear();
 
-		return customers;
+			return customers;
+		});
 	}
 	
 	public void add(final Purchase purchase)
@@ -185,21 +189,26 @@ public class Purchases
 	)
 	{
 		final Integer year = purchase.timestamp().getYear();
-		final Lazy<YearlyPurchases> lazy = this.yearlyPurchases.get(year);
-		if(lazy != null)
+		this.write(year, () ->
 		{
-			lazy.get().add(purchase, persister);
-		}
-		else
-		{
-			this.yearlyPurchases.put(
-				year,
-				Lazy.Reference(
-					new YearlyPurchases().add(purchase, null)
-				)
-			);
-			persister.store(this.yearlyPurchases);
-		}
+			final Lazy<YearlyPurchases> lazy = this.yearlyPurchases.get(year);
+			if(lazy != null)
+			{
+				lazy.get().add(purchase, persister);
+			}
+			else
+			{
+				this.write(0, () -> {
+					this.yearlyPurchases.put(
+						year,
+						Lazy.Reference(
+							new YearlyPurchases().add(purchase, null)
+						)
+					);
+					persister.store(this.yearlyPurchases);
+				});
+			}
+		});
 	}
 	
 	public void clear()
@@ -211,16 +220,20 @@ public class Purchases
 		final int year
 	)
 	{
-		clearIfStored(this.yearlyPurchases.get(year))
-			.ifPresent(YearlyPurchases::clear);
+		this.write(year, () ->
+			clearIfStored(this.yearlyPurchases.get(year))
+				.ifPresent(YearlyPurchases::clear)
+		);
 	}
 
 	public Range<Integer> years()
 	{
-		final IntSummaryStatistics summary = this.yearlyPurchases.keySet().stream()
-			.mapToInt(Integer::intValue)
-			.summaryStatistics();
-		return Range.closed(summary.getMin(), summary.getMax());
+		return this.read(0, () -> {
+			final IntSummaryStatistics summary = this.yearlyPurchases.keySet().stream()
+				.mapToInt(Integer::intValue)
+				.summaryStatistics();
+			return Range.closed(summary.getMin(), summary.getMax());
+		});
 	}
 
 	public <T> T computeByYear(
@@ -228,14 +241,17 @@ public class Purchases
 		final Function<Stream<Purchase>, T> streamFunction
 	)
 	{
-		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
-		return streamFunction.apply(
-			yearlyPurchases == null
-				? Stream.empty()
-				: yearlyPurchases.shopToPurchases.values().parallelStream()
-					.map(l -> l.get())
-					.flatMap(List::stream)
-		);
+		return this.read(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+			return streamFunction.apply(
+				yearlyPurchases == null
+					? Stream.empty()
+					: yearlyPurchases.shopToPurchases.values().parallelStream()
+						.map(l -> l.get())
+						.flatMap(List::stream)
+			);
+		});
 	}
 
 	public <T> T computeByShopAndYear(
@@ -244,12 +260,15 @@ public class Purchases
 		final Function<Stream<Purchase>, T> streamFunction
 	)
 	{
-		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
-		return streamFunction.apply(
-			yearlyPurchases == null
-				? Stream.empty()
-				: yearlyPurchases.byShop(shop)
-		);
+		return this.read(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+			return streamFunction.apply(
+				yearlyPurchases == null
+					? Stream.empty()
+					: yearlyPurchases.byShop(shop)
+			);
+		});
 	}
 
 	public <T> T computeByShopsAndYear(
@@ -258,12 +277,15 @@ public class Purchases
 		final Function<Stream<Purchase>, T> streamFunction
 	)
 	{
-		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
-		return streamFunction.apply(
-			yearlyPurchases == null
-				? Stream.empty()
-				: yearlyPurchases.byShops(shopSelector)
-		);
+		return this.read(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+			return streamFunction.apply(
+				yearlyPurchases == null
+					? Stream.empty()
+					: yearlyPurchases.byShops(shopSelector)
+			);
+		});
 	}
 
 	public <T> T computeByEmployeeAndYear(
@@ -272,12 +294,15 @@ public class Purchases
 		final Function<Stream<Purchase>, T> streamFunction
 	)
 	{
-		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
-		return streamFunction.apply(
-			yearlyPurchases == null
-				? Stream.empty()
-				: yearlyPurchases.byEmployee(employee)
-		);
+		return this.read(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+			return streamFunction.apply(
+				yearlyPurchases == null
+					? Stream.empty()
+					: yearlyPurchases.byEmployee(employee)
+			);
+		});
 	}
 
 	public <T> T computeByCustomerAndYear(
@@ -286,12 +311,15 @@ public class Purchases
 		final Function<Stream<Purchase>, T> streamFunction
 	)
 	{
-		final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
-		return streamFunction.apply(
-			yearlyPurchases == null
-				? Stream.empty()
-				: yearlyPurchases.byCustomer(customer)
-		);
+		return this.read(year, () ->
+		{
+			final YearlyPurchases yearlyPurchases = Lazy.get(this.yearlyPurchases.get(year));
+			return streamFunction.apply(
+				yearlyPurchases == null
+					? Stream.empty()
+					: yearlyPurchases.byCustomer(customer)
+			);
+		});
 	}
 
 	public List<BookSales> bestSellerList(

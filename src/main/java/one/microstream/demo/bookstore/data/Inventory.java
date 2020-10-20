@@ -11,7 +11,9 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class Inventory
+import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
+
+public class Inventory extends ReadWriteLocked
 {
 	private final Map<Book, Integer> inventoryMap;
 
@@ -30,33 +32,41 @@ public class Inventory
 
 	public int amount(final Book book)
 	{
-		return coalesce(
+		return this.read(() -> coalesce(
 			this.inventoryMap.get(book),
 			0
-		);
+		));
 	}
 
 	public int slotCount()
 	{
-		return this.inventoryMap.size();
+		return this.read(() ->
+			this.inventoryMap.size()
+		);
 	}
 
 	public List<Entry<Book, Integer>> slots()
 	{
-		return new ArrayList<>(this.inventoryMap.entrySet());
+		return this.read(() ->
+			new ArrayList<>(this.inventoryMap.entrySet())
+		);
 	}
 
 	public List<Book> books()
 	{
-		return this.inventoryMap.keySet().stream().collect(toList());
+		return this.read(() ->
+			this.inventoryMap.keySet().stream().collect(toList())
+		);
 	}
 	
 	public <T> T compute(
 		final Function<Stream<Entry<Book, Integer>>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(
-			this.inventoryMap.entrySet().stream()
+		return this.read(() ->
+			streamFunction.apply(
+				this.inventoryMap.entrySet().stream()
+			)
 		);
 	}
 

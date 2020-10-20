@@ -7,9 +7,10 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
+import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.persistence.types.Persister;
 
-public class Shops
+public class Shops extends ReadWriteLocked
 {
 	private final List<Shop> shops = new ArrayList<>(1024);
 
@@ -28,8 +29,10 @@ public class Shops
 		final Persister persister
 	)
 	{
-		this.shops.add(shop);
-		persister.store(this.shops);
+		this.write(() -> {
+			this.shops.add(shop);
+			persister.store(this.shops);
+		});
 	}
 	
 	public void addAll(final Collection<? extends Shop> shops)
@@ -42,31 +45,41 @@ public class Shops
 		final Persister persister
 	)
 	{
-		this.shops.addAll(shops);
-		persister.store(this.shops);
+		this.write(() -> {
+			this.shops.addAll(shops);
+			persister.store(this.shops);
+		});
 	}
 
 	public int shopCount()
 	{
-		return this.shops.size();
+		return this.read(
+			this.shops::size
+		);
 	}
 
 	public List<Shop> all()
 	{
-		return new ArrayList<>(this.shops);
+		return this.read(() ->
+			new ArrayList<>(this.shops)
+		);
 	}
 	
 	public void clear()
 	{
-		this.shops.forEach(Shop::clear);
+		this.write(() ->
+			this.shops.forEach(Shop::clear)
+		);
 	}
-	
+
 	public <T> T compute(
 		final Function<Stream<Shop>, T> streamFunction
 	)
 	{
-		return streamFunction.apply(
-			this.shops.parallelStream()
+		return this.read(() ->
+			streamFunction.apply(
+				this.shops.parallelStream()
+			)
 		);
 	}
 
@@ -74,10 +87,12 @@ public class Shops
 		final Function<Stream<InventoryItem>, T> function
 	)
 	{
-		return function.apply(
-			this.shops.parallelStream().flatMap(shop ->
-				shop.inventory().compute(entries ->
-					entries.map(entry -> new InventoryItem(shop, entry.getKey(), entry.getValue()))
+		return this.read(() ->
+			function.apply(
+				this.shops.parallelStream().flatMap(shop ->
+					shop.inventory().compute(entries ->
+						entries.map(entry -> new InventoryItem(shop, entry.getKey(), entry.getValue()))
+					)
 				)
 			)
 		);
@@ -85,11 +100,12 @@ public class Shops
 
 	public Shop ofName(final String name)
 	{
-		return this.shops.stream()
-			.filter(shop -> shop.name().equals(name))
-			.findAny()
-			.orElse(null)
-		;
+		return this.read(() ->
+			this.shops.stream()
+				.filter(shop -> shop.name().equals(name))
+				.findAny()
+				.orElse(null)
+		);
 	}
 
 }
