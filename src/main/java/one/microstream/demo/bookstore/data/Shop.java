@@ -1,6 +1,8 @@
 
 package one.microstream.demo.bookstore.data;
 
+import static one.microstream.demo.bookstore.util.LazyUtils.clearIfStored;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,6 +60,11 @@ public class Shop
 	public Inventory inventory()
 	{
 		return this.inventory.get();
+	}
+	
+	public void clear()
+	{
+		clearIfStored(this.inventory);
 	}
 
 	@Override
