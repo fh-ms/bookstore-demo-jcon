@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
 
-public class Customer
+public class Customer implements Named
 {
 	private final int     customerId;
 	private final String  name;
@@ -28,6 +28,7 @@ public class Customer
 		return this.customerId;
 	}
 
+	@Override
 	public String name()
 	{
 		return this.name;

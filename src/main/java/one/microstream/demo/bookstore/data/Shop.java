@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import one.microstream.reference.Lazy;
 
-public class Shop
+public class Shop implements Named
 {
 	private final String          name;
 	private final Address         address;
@@ -44,6 +44,7 @@ public class Shop
 		this.inventory = Lazy.Reference(inventory);
 	}
 
+	@Override
 	public String name()
 	{
 		return this.name;
