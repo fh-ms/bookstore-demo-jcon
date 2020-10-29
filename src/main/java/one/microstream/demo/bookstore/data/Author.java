@@ -4,7 +4,7 @@ package one.microstream.demo.bookstore.data;
 import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 
-public class Author
+public class Author implements Named
 {
 	private final String  name;
 	private final Address address;
@@ -19,6 +19,7 @@ public class Author
 		this.address = requireNonNull(address, () -> "Address cannot be null");
 	}
 
+	@Override
 	public String name()
 	{
 		return this.name;
