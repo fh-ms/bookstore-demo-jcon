@@ -8,11 +8,32 @@ import com.google.common.util.concurrent.Striped;
 
 public class ReadWriteLockedStriped
 {
-	private final transient Striped<ReadWriteLock> stripes = Striped.lazyWeakReadWriteLock(4);
+	private transient volatile Striped<ReadWriteLock> stripes;
 
 	public ReadWriteLockedStriped()
 	{
 		super();
+	}
+	
+	private Striped<ReadWriteLock> stripes()
+	{
+		/*
+		 * Double-checked locking to reduce the overhead of acquiring a lock
+		 * by testing the locking criterion.
+		 * The field (this.stripes) has to be volatile.
+		 */
+		Striped<ReadWriteLock> stripes = this.stripes;
+		if(stripes == null)
+		{
+			synchronized(this)
+			{
+				if((stripes = this.stripes) == null)
+				{
+					stripes = this.stripes = Striped.lazyWeakReadWriteLock(4);
+				}
+			}
+		}
+		return stripes;
 	}
 
 	public <T> T read(
@@ -20,7 +41,7 @@ public class ReadWriteLockedStriped
 		final ValueOperation<T> operation
 		)
 	{
-		final Lock readLock = this.stripes.get(key).readLock();
+		final Lock readLock = this.stripes().get(key).readLock();
 		readLock.lock();
 
 		try
@@ -38,7 +59,7 @@ public class ReadWriteLockedStriped
 		final VoidOperation operation
 	)
 	{
-		final Lock readLock = this.stripes.get(key).readLock();
+		final Lock readLock = this.stripes().get(key).readLock();
 		readLock.lock();
 
 		try
@@ -56,7 +77,7 @@ public class ReadWriteLockedStriped
 		final ValueOperation<T> operation
 	)
 	{
-		final Lock writeLock = this.stripes.get(key).writeLock();
+		final Lock writeLock = this.stripes().get(key).writeLock();
 		writeLock.lock();
 
 		try
@@ -74,7 +95,7 @@ public class ReadWriteLockedStriped
 		final VoidOperation operation
 	)
 	{
-		final Lock writeLock = this.stripes.get(key).writeLock();
+		final Lock writeLock = this.stripes().get(key).writeLock();
 		writeLock.lock();
 
 		try
