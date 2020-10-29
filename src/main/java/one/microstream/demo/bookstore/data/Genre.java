@@ -3,7 +3,7 @@ package one.microstream.demo.bookstore.data;
 
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 
-public class Genre
+public class Genre implements Named
 {
 	private final String name;
 	
@@ -15,6 +15,7 @@ public class Genre
 		this.name = requireNonBlank(name, () -> "Name cannot be empty");
 	}
 
+	@Override
 	public String name()
 	{
 		return this.name;

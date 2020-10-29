@@ -8,7 +8,7 @@ import static one.microstream.demo.bookstore.util.ValidationUtils.validateIsbn13
 
 import javax.money.MonetaryAmount;
 
-public class Book
+public class Book implements Comparable<Book>
 {
 	private final String         isbn13;
 	private final String         title;
@@ -79,6 +79,12 @@ public class Book
 	public MonetaryAmount retailPrice()
 	{
 		return this.retailPrice;
+	}
+	
+	@Override
+	public int compareTo(final Book other)
+	{
+		return this.title().compareTo(other.title());
 	}
 
 	@Override
