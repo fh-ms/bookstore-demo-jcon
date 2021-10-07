@@ -25,7 +25,7 @@ import javax.money.MonetaryAmount;
 import com.github.javafaker.Faker;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.storage.types.EmbeddedStorageManager;
+import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
 
 public class RandomDataGenerator
