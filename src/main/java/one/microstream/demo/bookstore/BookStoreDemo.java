@@ -3,7 +3,6 @@ package one.microstream.demo.bookstore;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Paths;
 import java.util.Locale;
 
 import javax.money.CurrencyUnit;
@@ -19,10 +18,10 @@ import org.javamoney.moneta.format.CurrencyStyle;
 import one.microstream.demo.bookstore.data.Data;
 import one.microstream.demo.bookstore.data.RandomDataAmount;
 import one.microstream.demo.bookstore.data.RandomDataGenerator;
-import one.microstream.jdk8.java.util.BinaryHandlersJDK8;
-import one.microstream.storage.configuration.Configuration;
-import one.microstream.storage.types.EmbeddedStorageFoundation;
-import one.microstream.storage.types.EmbeddedStorageManager;
+import one.microstream.persistence.binary.jdk8.types.BinaryHandlersJDK8;
+import one.microstream.storage.embedded.configuration.types.EmbeddedStorageConfiguration;
+import one.microstream.storage.embedded.types.EmbeddedStorageFoundation;
+import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
 
 public final class BookStoreDemo
@@ -77,11 +76,10 @@ public final class BookStoreDemo
 	
 	private static EmbeddedStorageManager createStorageManager()
 	{
-		final Configuration configuration = Configuration.Default();
-		configuration.setBaseDirectory(Paths.get("data", "storage").toString());
-		configuration.setChannelCount(2);
-
-		final EmbeddedStorageFoundation<?> foundation = configuration.createEmbeddedStorageFoundation();
+		final EmbeddedStorageFoundation<?> foundation = EmbeddedStorageConfiguration.Builder()
+			.setStorageDirectory("data/storage")
+			.setChannelCount(2)
+			.createEmbeddedStorageFoundation();
 		foundation.onConnectionFoundation(BinaryHandlersJDK8::registerJDK8TypeHandlers);
 		final EmbeddedStorageManager storageManager = foundation.createEmbeddedStorageManager().start();
 
