@@ -34,6 +34,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<microstream.version>08.01.00-MS-GA</microstream.version>
+		<lucene.version>8.5.1</lucene.version>
 	</properties>
 
 	<dependencies>
