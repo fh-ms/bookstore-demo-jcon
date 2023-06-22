@@ -28,7 +28,7 @@ import com.google.common.collect.Range;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLockedStriped;
-import one.microstream.persistence.types.Persister;
+import one.microstream.enterprise.cluster.nodelibrary.common.ClusterStorageManager;
 import one.microstream.reference.Lazy;
 
 
@@ -50,7 +50,7 @@ public class Purchases extends ReadWriteLockedStriped
 
 		YearlyPurchases add(
 			final Purchase purchase,
-			final Persister persister
+			final ClusterStorageManager<Data> persister
 		)
 		{
 			final List<Object> changedObjects = new ArrayList<>();
@@ -59,7 +59,7 @@ public class Purchases extends ReadWriteLockedStriped
 			addToMap(this.customerToPurchases, purchase.customer(), purchase, changedObjects);
 			if(persister != null && changedObjects.size() > 0)
 			{
-				persister.storeAll(changedObjects);
+				changedObjects.forEach(persister::store);
 			}
 			return this;
 		}
@@ -156,7 +156,7 @@ public class Purchases extends ReadWriteLockedStriped
 	Set<Customer> init(
 		final int year,
 		final List<Purchase> purchases,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		return this.write(year, () ->
@@ -185,7 +185,7 @@ public class Purchases extends ReadWriteLockedStriped
 	
 	public void add(
 		final Purchase purchase,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		final Integer year = purchase.timestamp().getYear();

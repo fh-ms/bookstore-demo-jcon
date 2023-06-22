@@ -18,10 +18,7 @@ import org.javamoney.moneta.format.CurrencyStyle;
 import one.microstream.demo.bookstore.data.Data;
 import one.microstream.demo.bookstore.data.RandomDataAmount;
 import one.microstream.demo.bookstore.data.RandomDataGenerator;
-import one.microstream.persistence.binary.jdk8.types.BinaryHandlersJDK8;
-import one.microstream.storage.embedded.configuration.types.EmbeddedStorageConfiguration;
-import one.microstream.storage.embedded.types.EmbeddedStorageFoundation;
-import one.microstream.storage.embedded.types.EmbeddedStorageManager;
+import one.microstream.enterprise.cluster.nodelibrary.common.ClusterStorageManager;
 
 
 public final class BookStoreDemo
@@ -72,47 +69,35 @@ public final class BookStoreDemo
 	
 	
 	
-	private final static EmbeddedStorageManager storageManager = createStorageManager();
+	private final static ClusterStorageManager<Data> storageManager = createStorageManager();
+	private static Data                              root           = new Data();
 	
-	private static EmbeddedStorageManager createStorageManager()
+	private static ClusterStorageManager<Data> createStorageManager()
 	{
-		final EmbeddedStorageFoundation<?> foundation = EmbeddedStorageConfiguration.Builder()
-			.setStorageDirectory("data/storage")
-			.setChannelCount(2)
-			.createEmbeddedStorageFoundation();
-		foundation.onConnectionFoundation(BinaryHandlersJDK8::registerJDK8TypeHandlers);
-		final EmbeddedStorageManager storageManager = foundation.createEmbeddedStorageManager().start();
+		final ClusterStorageManager<Data> storageManager = new ClusterStorageManager<>(root);
 
-		if(storageManager.root() == null)
+		if(root.books().bookCount() == 0)
 		{
-			final Data data = new Data();
-			storageManager.setRoot(data);
-			storageManager.storeRoot();
-			
 			new RandomDataGenerator(
-				data,
+				root,
 				RandomDataAmount.Small(),
 				storageManager
 			)
 			.generate();
+			storageManager.store(root);
 		}
 		
 		return storageManager;
 	}
 	
-	public static EmbeddedStorageManager storageManager()
+	public static ClusterStorageManager<Data> storageManager()
 	{
 		return storageManager;
 	}
 
 	public static Data data()
 	{
-		return (Data)storageManager.root();
-	}
-
-	public static void shutdown()
-	{
-		storageManager.shutdown();
+		return root;
 	}
 		
 }

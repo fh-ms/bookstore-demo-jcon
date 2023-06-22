@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
-import one.microstream.persistence.types.Persister;
+import one.microstream.enterprise.cluster.nodelibrary.common.ClusterStorageManager;
 
 public class Customers extends ReadWriteLocked
 {
@@ -29,7 +29,7 @@ public class Customers extends ReadWriteLocked
 	
 	public void add(
 		final Customer customer,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		this.write(() -> {
@@ -45,7 +45,7 @@ public class Customers extends ReadWriteLocked
 	
 	public void addAll(
 		final Collection<? extends Customer> customers,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		this.write(() -> {

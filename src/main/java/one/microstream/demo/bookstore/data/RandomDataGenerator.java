@@ -25,7 +25,7 @@ import javax.money.MonetaryAmount;
 import com.github.javafaker.Faker;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.storage.embedded.types.EmbeddedStorageManager;
+import one.microstream.enterprise.cluster.nodelibrary.common.ClusterStorageManager;
 
 
 public class RandomDataGenerator
@@ -83,7 +83,7 @@ public class RandomDataGenerator
 
 	private final Data                   data;
 	private final RandomDataAmount       dataAmount;
-	private final EmbeddedStorageManager storageManager;
+	private final ClusterStorageManager<Data> storageManager;
 
 	private final Random                 random     = new Random();
 	private final Faker                  faker      = Faker.instance();
@@ -98,7 +98,7 @@ public class RandomDataGenerator
 	public RandomDataGenerator(
 		final Data data,
 		final RandomDataAmount dataAmount,
-		final EmbeddedStorageManager storageManager
+		final ClusterStorageManager<Data> storageManager
 	)
 	{
 		super();

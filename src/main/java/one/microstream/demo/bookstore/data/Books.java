@@ -21,7 +21,7 @@ import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
 import one.microstream.demo.bookstore.data.Index.EntityMatcher;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
-import one.microstream.persistence.types.Persister;
+import one.microstream.enterprise.cluster.nodelibrary.common.ClusterStorageManager;
 
 public class Books extends ReadWriteLocked
 {
@@ -50,7 +50,7 @@ public class Books extends ReadWriteLocked
 	
 	public void add(
 		final Book book,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		this.write(() ->
@@ -68,7 +68,7 @@ public class Books extends ReadWriteLocked
 	
 	public void addAll(
 		final Collection<? extends Book> books,
-		final Persister persister
+		final ClusterStorageManager<Data> persister
 	)
 	{
 		this.write(() ->
@@ -103,15 +103,12 @@ public class Books extends ReadWriteLocked
 		.add(book);
 	}
 	
-	private void storeCollections(final Persister persister)
+	private void storeCollections(final ClusterStorageManager<Data> persister)
 	{
-		persister.storeAll(
-			this.isbn13ToBook,
-			this.authorToBooks,
-			this.genreToBooks,
-			this.publisherToBooks,
-			this.languageToBooks
-		);
+		persister.store(this.isbn13ToBook);
+		persister.store(this.genreToBooks);
+		persister.store(this.publisherToBooks);
+		persister.store(this.languageToBooks);
 	}
 
 	public List<Book> all()
