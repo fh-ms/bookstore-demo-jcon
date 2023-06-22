@@ -44,7 +44,7 @@
 		<microstream.nodelibrary.version>1.0.0</microstream.nodelibrary.version>
 		<micronaut.version>3.9.0</micronaut.version>
 		<micronaut.runtime>netty</micronaut.runtime>
-		<exec.mainClass>com.example.jcon2023.Application</exec.mainClass>
+		<exec.mainClass>one.microstream.demo.bookstore.Application</exec.mainClass>
 	</properties>
 	
 	<repositories>
