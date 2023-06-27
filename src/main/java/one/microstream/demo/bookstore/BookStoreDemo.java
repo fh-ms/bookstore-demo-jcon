@@ -70,11 +70,12 @@ public final class BookStoreDemo
 	
 	
 	private final static ClusterStorageManager<Data> storageManager = createStorageManager();
-	private static Data                              root           = new Data();
+	private static Data                              root;
 	
 	private static ClusterStorageManager<Data> createStorageManager()
 	{
-		final ClusterStorageManager<Data> storageManager = new ClusterStorageManager<>(root);
+		final ClusterStorageManager<Data> storageManager = new ClusterStorageManager<>(new Data());
+		root = storageManager.getRoot().get();
 
 		if(root.books().bookCount() == 0)
 		{
