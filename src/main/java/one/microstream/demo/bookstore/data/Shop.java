@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import one.microstream.reference.Lazy;
+import org.eclipse.serializer.reference.Lazy;
 
 public class Shop
 {

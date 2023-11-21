@@ -8,8 +8,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.serializer.persistence.types.Persister;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.persistence.types.Persister;
 
 public class Customers
 {

@@ -9,8 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.serializer.persistence.types.Persister;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.persistence.types.Persister;
 
 public class Books
 {

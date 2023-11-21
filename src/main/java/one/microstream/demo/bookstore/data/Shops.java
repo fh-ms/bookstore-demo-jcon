@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.eclipse.serializer.persistence.types.Persister;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.persistence.types.Persister;
 
 public class Shops
 {
