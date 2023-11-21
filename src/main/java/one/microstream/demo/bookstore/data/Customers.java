@@ -9,9 +9,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.serializer.persistence.types.Persister;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
-import one.microstream.persistence.types.Persister;
 
 public class Customers extends ReadWriteLocked
 {

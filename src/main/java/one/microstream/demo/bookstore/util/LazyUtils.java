@@ -2,7 +2,7 @@ package one.microstream.demo.bookstore.util;
 
 import java.util.Optional;
 
-import one.microstream.reference.Lazy;
+import org.eclipse.serializer.reference.Lazy;
 
 public final class LazyUtils
 {

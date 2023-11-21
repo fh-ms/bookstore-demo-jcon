@@ -1,7 +1,7 @@
 package one.microstream.demo.bookstore.data;
 
 import static java.util.stream.Collectors.toList;
-import static one.microstream.X.coalesce;
+import static org.eclipse.serializer.util.X.coalesce;
 
 import java.util.ArrayList;
 import java.util.HashMap;
