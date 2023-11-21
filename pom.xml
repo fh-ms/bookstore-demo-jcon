@@ -33,25 +33,25 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<microstream.version>08.01.00-MS-GA</microstream.version>
+		<eclipsestore.version>1.0.0</eclipsestore.version>
 		<lucene.version>8.5.1</lucene.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>one.microstream</groupId>
-			<artifactId>microstream-storage-embedded</artifactId>
-			<version>${microstream.version}</version>
+			<groupId>org.eclipse.store</groupId>
+			<artifactId>storage-embedded</artifactId>
+			<version>${eclipsestore.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>one.microstream</groupId>
-			<artifactId>microstream-storage-embedded-configuration</artifactId>
-			<version>${microstream.version}</version>
+			<groupId>org.eclipse.store</groupId>
+			<artifactId>storage-embedded-configuration</artifactId>
+			<version>${eclipsestore.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>one.microstream</groupId>
-			<artifactId>microstream-persistence-binary-jdk8</artifactId>
-			<version>${microstream.version}</version>
+			<groupId>org.eclipse.serializer</groupId>
+			<artifactId>persistence-binary-jdk8</artifactId>
+			<version>${eclipsestore.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javamoney.moneta</groupId>

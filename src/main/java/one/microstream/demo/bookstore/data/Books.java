@@ -16,11 +16,11 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.QueryBuilder;
+import org.eclipse.serializer.persistence.types.Persister;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
 import one.microstream.demo.bookstore.data.Index.EntityMatcher;
-import one.microstream.persistence.types.Persister;
 
 public class Books
 {

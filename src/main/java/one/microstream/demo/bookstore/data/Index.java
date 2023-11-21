@@ -24,8 +24,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.QueryBuilder;
-
-import one.microstream.exceptions.IORuntimeException;
+import org.eclipse.serializer.exceptions.IORuntimeException;
 
 
 public class Index<T> implements Closeable
