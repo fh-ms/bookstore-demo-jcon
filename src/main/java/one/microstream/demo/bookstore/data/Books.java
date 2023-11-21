@@ -11,8 +11,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.eclipse.serializer.persistence.types.Persister;
+
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.persistence.types.Persister;
 
 public class Books
 {

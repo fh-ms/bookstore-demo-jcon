@@ -22,10 +22,11 @@ import java.util.stream.Stream;
 
 import javax.money.MonetaryAmount;
 
+import org.eclipse.store.storage.embedded.types.EmbeddedStorageManager;
+
 import com.github.javafaker.Faker;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
 
 public class RandomDataGenerator
