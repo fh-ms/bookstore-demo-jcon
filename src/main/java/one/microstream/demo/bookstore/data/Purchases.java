@@ -12,11 +12,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.serializer.persistence.types.Persister;
+import org.eclipse.serializer.reference.Lazy;
+
 import com.google.common.collect.Range;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.persistence.types.Persister;
-import one.microstream.reference.Lazy;
 
 
 public class Purchases
