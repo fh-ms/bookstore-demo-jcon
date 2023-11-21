@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.common.collect.Range;
+import org.eclipse.serializer.reference.Lazy;
 
-import one.microstream.reference.Lazy;
+import com.google.common.collect.Range;
 
 
 public class Purchases

@@ -1,11 +1,12 @@
 
 package one.microstream.demo.bookstore;
 
+import org.eclipse.serializer.persistence.binary.jdk8.types.BinaryHandlersJDK8;
+import org.eclipse.store.storage.embedded.configuration.types.EmbeddedStorageConfiguration;
+import org.eclipse.store.storage.embedded.types.EmbeddedStorageFoundation;
+import org.eclipse.store.storage.embedded.types.EmbeddedStorageManager;
+
 import one.microstream.demo.bookstore.data.Data;
-import one.microstream.persistence.binary.jdk8.types.BinaryHandlersJDK8;
-import one.microstream.storage.embedded.configuration.types.EmbeddedStorageConfiguration;
-import one.microstream.storage.embedded.types.EmbeddedStorageFoundation;
-import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
 
 public final class BookStoreDemo
