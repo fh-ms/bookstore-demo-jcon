@@ -35,6 +35,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<eclipsestore.version>1.0.0</eclipsestore.version>
 		<lucene.version>8.5.1</lucene.version>
+		<gigamap.version>1.0.0-beta1</gigamap.version>
 	</properties>
 
 	<dependencies>
@@ -52,6 +53,11 @@
 			<groupId>org.eclipse.serializer</groupId>
 			<artifactId>persistence-binary-jdk8</artifactId>
 			<version>${eclipsestore.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>one.microstream</groupId>
+			<artifactId>gigamap</artifactId>
+			<version>${gigamap.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javamoney.moneta</groupId>
