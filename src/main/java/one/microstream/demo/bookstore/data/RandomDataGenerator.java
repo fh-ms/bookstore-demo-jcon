@@ -352,7 +352,7 @@ public class RandomDataGenerator
 			)
 			.collect(toList());
 
-		final Set<Customer> customersForYear = this.data.purchases().init(year, purchases, this.storageManager);
+		final Set<Customer> customersForYear = this.data.purchases().init(purchases, this.storageManager);
 
 		customers.addAll(customersForYear);
 

@@ -1,19 +1,29 @@
 package one.microstream.demo.bookstore.data;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.eclipse.serializer.persistence.types.Persister;
 
-import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
+import one.microstream.gigamap.Condition;
+import one.microstream.gigamap.GigaMap;
+import one.microstream.gigamap.GigaQuery;
 
 public class Shops extends ReadWriteLocked
 {
-	private final List<Shop> shops = new ArrayList<>(1024);
+	private final GigaMap<Shop> map = GigaMap.<Shop>Builder()
+		.withBitmapIndex(Named.nameIndex)
+		.withBitmapIndex(HasAddress.address1Index)
+		.withBitmapIndex(HasAddress.address2Index)
+		.withBitmapIndex(HasAddress.zipcodeIndex)
+		.withBitmapIndex(HasAddress.cityIndex)
+		.withBitmapIndex(HasAddress.stateIndex)
+		.withBitmapIndex(HasAddress.countryIndex)
+		.build()
+	;
+	
 
 	public Shops()
 	{
@@ -22,7 +32,11 @@ public class Shops extends ReadWriteLocked
 	
 	public void add(final Shop shop)
 	{
-		this.add(shop, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.add(shop);
+			this.map.store();
+		});
 	}
 	
 	public void add(
@@ -30,15 +44,20 @@ public class Shops extends ReadWriteLocked
 		final Persister persister
 	)
 	{
-		this.write(() -> {
-			this.shops.add(shop);
-			persister.store(this.shops);
+		this.write(() ->
+		{
+			this.map.add(shop);
+			persister.store(this.map);
 		});
 	}
 	
 	public void addAll(final Collection<? extends Shop> shops)
 	{
-		this.addAll(shops, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.addAll(shops);
+			this.map.store();
+		});
 	}
 	
 	public void addAll(
@@ -46,67 +65,63 @@ public class Shops extends ReadWriteLocked
 		final Persister persister
 	)
 	{
-		this.write(() -> {
-			this.shops.addAll(shops);
-			persister.store(this.shops);
+		this.write(() ->
+		{
+			this.map.addAll(shops);
+			persister.store(this.map);
 		});
 	}
 
-	public int shopCount()
+	public long shopCount()
 	{
-		return this.read(
-			this.shops::size
+		return this.read(() ->
+			this.map.size()
 		);
 	}
 
-	public List<Shop> all()
-	{
-		return this.read(() ->
-			new ArrayList<>(this.shops)
-		);
-	}
-	
 	public void clear()
 	{
 		this.write(() ->
-			this.shops.forEach(Shop::clear)
-		);
-	}
-
-	public <T> T compute(
-		final Function<Stream<Shop>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-			streamFunction.apply(
-				this.shops.parallelStream()
-			)
-		);
-	}
-
-	public <T> T computeInventory(
-		final Function<Stream<InventoryItem>, T> function
-	)
-	{
-		return this.read(() ->
-			function.apply(
-				this.shops.parallelStream().flatMap(shop ->
-					shop.inventory().compute(entries ->
-						entries.map(entry -> new InventoryItem(shop, entry.getKey(), entry.getValue()))
-					)
-				)
-			)
+			this.map.forEach(Shop::clear)
 		);
 	}
 
 	public Shop ofName(final String name)
 	{
 		return this.read(() ->
-			this.shops.stream()
-				.filter(shop -> shop.name().equals(name))
+			this.map.query(Named.nameIndex.is(name))
+				.findFirst()
+				.orElse(null)
+		);
+	}
+	
+	public Country countryByCode(final String code)
+	{
+		return this.read(() ->
+			HasAddress.countryIndex.resolveKeys(this.map)
+				.stream()
+				.filter(c -> c.code().equals(code))
 				.findAny()
 				.orElse(null)
 		);
+	}
+	
+	public <R> R compute(
+		final Condition<Shop>           condition,
+		final int                       offset,
+		final int                       limit,
+		final Function<Stream<Shop>, R> function
+	)
+	{
+		return this.read(() ->
+		{
+			GigaQuery<Shop> query = this.map.query();
+			if(condition != null)
+			{
+				query = query.and(condition);
+			}
+			return function.apply(query.toList(offset, limit).stream());
+		});
 	}
 
 }

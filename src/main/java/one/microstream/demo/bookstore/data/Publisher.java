@@ -4,7 +4,7 @@ package one.microstream.demo.bookstore.data;
 import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 
-public class Publisher implements Named
+public class Publisher implements Named, HasAddress
 {
 	private final String  name;
 	private final Address address;
@@ -25,6 +25,7 @@ public class Publisher implements Named
 		return this.name;
 	}
 
+	@Override
 	public Address address()
 	{
 		return this.address;

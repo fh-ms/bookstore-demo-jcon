@@ -1,42 +1,30 @@
 
 package one.microstream.demo.bookstore.data;
 
-import static java.util.stream.Collectors.toList;
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.QueryBuilder;
 import org.eclipse.serializer.persistence.types.Persister;
 
-import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
-import one.microstream.demo.bookstore.data.Index.EntityMatcher;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
+import one.microstream.gigamap.Condition;
+import one.microstream.gigamap.GigaMap;
+import one.microstream.gigamap.GigaQuery;
 
 public class Books extends ReadWriteLocked
 {
-	/*
-	 * Multiple maps holding references to the books, for a faster lookup.
-	 */
-	private final Map<String, Book>          isbn13ToBook     = new HashMap<>(1024);
-	private final Map<Author, List<Book>>    authorToBooks    = new HashMap<>(512);
-	private final Map<Genre, List<Book>>     genreToBooks     = new HashMap<>(512);
-	private final Map<Publisher, List<Book>> publisherToBooks = new HashMap<>(1024);
-	private final Map<Language, List<Book>>  languageToBooks  = new HashMap<>(32);
-	/*
-	 * Transient means it is not persisted by MicroStream, but created on demand.
-	 */
-	private transient volatile Index<Book>   index;
+	private final GigaMap<Book> map = GigaMap.<Book>Builder()
+		.withBitmapIdentityIndex(Book.isbn13Index)
+		.withBitmapIndex(Named.nameIndex)
+		.withBitmapIndex(Book.authorIndex)
+		.withBitmapIndex(Book.genreIndex)
+		.withBitmapIndex(Book.publisherIndex)
+		.withBitmapIndex(Book.languageIndex)
+		.build()
+	;
+	
 	
 	public Books()
 	{
@@ -45,7 +33,11 @@ public class Books extends ReadWriteLocked
 	
 	public void add(final Book book)
 	{
-		this.add(book, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.add(book);
+			this.map.store();
+		});
 	}
 	
 	public void add(
@@ -55,15 +47,18 @@ public class Books extends ReadWriteLocked
 	{
 		this.write(() ->
 		{
-			this.ensureIndex().add(book);
-			this.addToCollections(book);
-			this.storeCollections(persister);
+			this.map.add(book);
+			persister.store(this.map);
 		});
 	}
 	
 	public void addAll(final Collection<? extends Book> books)
 	{
-		this.addAll(books, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.addAll(books);
+			this.map.store();
+		});
 	}
 	
 	public void addAll(
@@ -73,96 +68,43 @@ public class Books extends ReadWriteLocked
 	{
 		this.write(() ->
 		{
-			this.ensureIndex().addAll(books);
-			books.forEach(this::addToCollections);
-			this.storeCollections(persister);
+			this.map.addAll(books);
+			persister.store(this.map);
 		});
-	}
-	
-	private void addToCollections(
-		final Book book
-	)
-	{
-		this.isbn13ToBook.put(book.isbn13(), book);
-		addToMap(this.authorToBooks, book.author(), book);
-		addToMap(this.genreToBooks, book.genre(), book);
-		addToMap(this.publisherToBooks, book.publisher(), book);
-		addToMap(this.languageToBooks, book.language(), book);
-	}
-
-	private static <K> void addToMap(
-		final Map<K, List<Book>> map,
-		final K key,
-		final Book book
-	)
-	{
-		map.computeIfAbsent(
-			key,
-			k -> new ArrayList<>(1024)
-		)
-		.add(book);
-	}
-	
-	private void storeCollections(final Persister persister)
-	{
-		persister.storeAll(
-			this.isbn13ToBook,
-			this.authorToBooks,
-			this.genreToBooks,
-			this.publisherToBooks,
-			this.languageToBooks
-		);
-	}
-
-	public List<Book> all()
-	{
-		return this.read(() ->
-			this.isbn13ToBook.values().stream()
-				.sorted()
-				.collect(toList())
-		);
 	}
 
 	public List<Author> authors()
 	{
 		return this.read(() ->
-			this.authorToBooks.keySet().stream()
-				.sorted()
-				.collect(toList())
+			Book.authorIndex.resolveKeys(this.map)
 		);
 	}
 
 	public List<Genre> genres()
 	{
 		return this.read(() ->
-			this.genreToBooks.keySet().stream()
-				.sorted()
-				.collect(toList())
+			Book.genreIndex.resolveKeys(this.map)
 		);
 	}
 
 	public List<Publisher> publishers()
 	{
 		return this.read(() ->
-			this.publisherToBooks.keySet().stream()
-				.sorted()
-				.collect(toList())
+			Book.publisherIndex.resolveKeys(this.map)
 		);
 	}
 
 	public List<Language> languages()
 	{
 		return this.read(() ->
-			this.languageToBooks.keySet().stream()
-				.sorted()
-				.collect(toList())
+			Book.languageIndex.resolveKeys(this.map)
 		);
 	}
 
-	public int bookCount()
+	public long bookCount()
 	{
-		return this.read(
-			this.isbn13ToBook::size
+		return this.read(() ->
+			this.map.size()
 		);
 	}
 
@@ -171,176 +113,61 @@ public class Books extends ReadWriteLocked
 	)
 	{
 		return this.read(() ->
-			this.isbn13ToBook.get(isbn13)
+			this.map.query(Book.isbn13Index.is(isbn13)).findFirst().orElse(null)
 		);
 	}
 	
-	public <T> T compute(
-		final Function<Stream<Book>, T> streamFunction
-	)
+	public List<Book> searchByTitle(final String queryText)
 	{
 		return this.read(() ->
-			streamFunction.apply(this.isbn13ToBook.values().stream())
+			this.map.query(Named.nameIndex.containsIgnoreCase(queryText)).toList()
 		);
-	}
-
-	public <T> T computeByAuthor(
-		final Author author,
-		final Function<Stream<Book>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-		{
-			final List<Book> list = this.authorToBooks.get(author);
-			return streamFunction.apply(
-				list != null
-					? list.stream()
-					: Stream.empty()
-			);
-		});
-	}
-
-	public  <T> T computeByGenre(
-		final Genre genre,
-		final Function<Stream<Book>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-		{
-			final List<Book> list = this.genreToBooks.get(genre);
-			return streamFunction.apply(
-				list != null
-					? list.stream()
-					: Stream.empty()
-			);
-		});
-	}
-
-	public <T> T computeByPublisher(
-		final Publisher publisher,
-		final Function<Stream<Book>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-		{
-			final List<Book> list = this.publisherToBooks.get(publisher);
-			return streamFunction.apply(
-				list != null
-					? list.stream()
-					: Stream.empty()
-			);
-		});
-	}
-
-	public <T> T computeByLanguage(
-		final Language language,
-		final Function<Stream<Book>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-		{
-			final List<Book> list = this.languageToBooks.get(language);
-			return streamFunction.apply(
-				list != null
-					? list.stream()
-					: Stream.empty()
-			);
-		});
 	}
 	
-	public <T> T computeGenres(
-		final Function<Stream<Genre>, T> streamFunction
+	public List<Book> allByAuthor(final Author author)
+	{
+		return this.read(() ->
+			this.map.query(Book.authorIndex.is(author)).toList()
+		);
+	}
+	
+	public List<Book> allByGenre(final Genre genre)
+	{
+		return this.read(() ->
+			this.map.query(Book.genreIndex.is(genre)).toList()
+		);
+	}
+	
+	public List<Book> allByPublisher(final Publisher publisher)
+	{
+		return this.read(() ->
+			this.map.query(Book.publisherIndex.is(publisher)).toList()
+		);
+	}
+	
+	public List<Book> allByLanguage(final Language language)
+	{
+		return this.read(() ->
+			this.map.query(Book.languageIndex.is(language)).toList()
+		);
+	}
+	
+	public <R> R compute(
+		final Condition<Book>           condition,
+		final int                       offset,
+		final int                       limit,
+		final Function<Stream<Book>, R> function
 	)
 	{
 		return this.read(() ->
-			streamFunction.apply(this.genreToBooks.keySet().stream())
-		);
-	}
-
-	public <T> T computeAuthors(
-		final Function<Stream<Author>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-			streamFunction.apply(this.authorToBooks.keySet().stream())
-		);
-	}
-
-	public <T> T computePublishers(
-		final Function<Stream<Publisher>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-			streamFunction.apply(this.publisherToBooks.keySet().stream())
-		);
-	}
-
-	public <T> T computeLanguages(
-		final Function<Stream<Language>, T> streamFunction
-	)
-	{
-		return this.read(() ->
-			streamFunction.apply(this.languageToBooks.keySet().stream())
-		);
-	}
-
-	public List<Book> searchByTitle(
-		final String queryText
-	)
-	{
-		final Index<Book>  index        = this.ensureIndex();
-		final QueryBuilder queryBuilder = index.createQueryBuilder();
-		final Query        query        = queryBuilder.createPhraseQuery("title", queryText);
-		return index.search(query, Integer.MAX_VALUE);
-	}
-
-	private Index<Book> ensureIndex()
-	{
-		/*
-		 * Double-checked locking to reduce the overhead of acquiring a lock
-		 * by testing the locking criterion.
-		 * The field (this.index) has to be volatile.
-		 */
-		Index<Book> index = this.index;
-		if(index == null)
 		{
-			synchronized(this)
+			GigaQuery<Book> query = this.map.query();
+			if(condition != null)
 			{
-				if((index = this.index) == null)
-				{
-					index = this.index = this.createIndex();
-				}
+				query = query.and(condition);
 			}
-		}
-		return index;
-	}
-
-	private Index<Book> createIndex()
-	{
-		final DocumentPopulator<Book> documentPopulator = (document, book) -> {
-			document.add(new StringField("isbn13", book.isbn13(), Store.YES));
-			document.add(new TextField("title", book.title(), Store.YES));
-			document.add(new TextField("author", book.author().name(), Store.YES));
-			document.add(new TextField("genre", book.genre().name(), Store.YES));
-			document.add(new TextField("publisher", book.publisher().name(), Store.YES));
-		};
-
-		final EntityMatcher<Book> entityMatcher = document ->
-			this.isbn13ToBook.get(document.get("isbn13"))
-		;
-
-		final Index<Book> index = new Index<>(
-			Book.class,
-			documentPopulator,
-			entityMatcher
-		);
-
-		if(index.size() == 0 && this.bookCount() > 0)
-		{
-			index.addAll(this.isbn13ToBook.values());
-		}
-
-		return index;
+			return function.apply(query.toList(offset, limit).stream());
+		});
 	}
 	
 }

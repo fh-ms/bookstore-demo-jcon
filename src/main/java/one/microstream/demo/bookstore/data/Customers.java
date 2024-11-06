@@ -1,22 +1,30 @@
 package one.microstream.demo.bookstore.data;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.serializer.persistence.types.Persister;
 
-import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
+import one.microstream.gigamap.Condition;
+import one.microstream.gigamap.GigaMap;
+import one.microstream.gigamap.GigaQuery;
 
 public class Customers extends ReadWriteLocked
 {
-	private final Map<Integer, Customer> customers = new HashMap<>();
+	private final GigaMap<Customer> map = GigaMap.<Customer>Builder()
+		.withBitmapIdentityIndex(Customer.idIndex)
+		.withBitmapIndex(HasAddress.address1Index)
+		.withBitmapIndex(HasAddress.address2Index)
+		.withBitmapIndex(HasAddress.zipcodeIndex)
+		.withBitmapIndex(HasAddress.cityIndex)
+		.withBitmapIndex(HasAddress.stateIndex)
+		.withBitmapIndex(HasAddress.countryIndex)
+		.withBitmapIndex(Named.nameIndex)
+		.build()
+	;
+	
 
 	public Customers()
 	{
@@ -25,7 +33,11 @@ public class Customers extends ReadWriteLocked
 	
 	public void add(final Customer customer)
 	{
-		this.add(customer, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.add(customer);
+			this.map.store();
+		});
 	}
 	
 	public void add(
@@ -33,15 +45,20 @@ public class Customers extends ReadWriteLocked
 		final Persister persister
 	)
 	{
-		this.write(() -> {
-			this.customers.put(customer.customerId(), customer);
-			persister.store(this.customers);
+		this.write(() ->
+		{
+			this.map.add(customer);
+			persister.store(this.map);
 		});
 	}
 
 	public void addAll(final Collection<? extends Customer> customers)
 	{
-		this.addAll(customers, BookStoreDemo.storageManager());
+		this.write(() ->
+		{
+			this.map.addAll(customers);
+			this.map.store();
+		});
 	}
 	
 	public void addAll(
@@ -49,46 +66,43 @@ public class Customers extends ReadWriteLocked
 		final Persister persister
 	)
 	{
-		this.write(() -> {
-			this.customers.putAll(
-				customers.stream().collect(
-					Collectors.toMap(Customer::customerId, Function.identity())
-				)
-			);
-			persister.store(this.customers);
+		this.write(() ->
+		{
+			this.map.addAll(customers);
+			persister.store(this.map);
 		});
 	}
 	
-	public int customerCount()
-	{
-		return this.read(
-			this.customers::size
-		);
-	}
-
-	public List<Customer> all()
+	public long customerCount()
 	{
 		return this.read(() ->
-			new ArrayList<>(this.customers.values())
+			this.map.size()
 		);
 	}
 
 	public Customer ofId(final int customerId)
 	{
 		return this.read(() ->
-			this.customers.get(customerId)
+			this.map.query(Customer.idIndex.is(customerId)).findFirst().orElse(null)
 		);
 	}
 	
-	public <T> T compute(
-		final Function<Stream<Customer>, T> streamFunction
+	public <R> R compute(
+		final Condition<Customer>           condition,
+		final int                           offset,
+		final int                           limit,
+		final Function<Stream<Customer>, R> function
 	)
 	{
 		return this.read(() ->
-			streamFunction.apply(
-				this.customers.values().parallelStream()
-			)
-		);
+		{
+			GigaQuery<Customer> query = this.map.query();
+			if(condition != null)
+			{
+				query = query.and(condition);
+			}
+			return function.apply(query.toList(offset, limit).stream());
+		});
 	}
 
 }

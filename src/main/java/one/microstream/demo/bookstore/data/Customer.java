@@ -5,8 +5,20 @@ import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
 
-public class Customer implements Named
+import one.microstream.gigamap.Indexer;
+
+public class Customer implements Named, HasAddress
 {
+	public static final Indexer.AbstractInteger<Customer> idIndex = new Indexer.AbstractInteger<>()
+	{
+		@Override
+		public Integer indexEntity(final Customer entity)
+		{
+			return entity.customerId();
+		}
+	};
+	
+	
 	private final int     customerId;
 	private final String  name;
 	private final Address address;
@@ -34,6 +46,7 @@ public class Customer implements Named
 		return this.name;
 	}
 
+	@Override
 	public Address address()
 	{
 		return this.address;

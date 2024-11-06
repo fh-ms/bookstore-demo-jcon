@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.serializer.reference.Lazy;
 
-public class Shop implements Named
+public class Shop implements Named, HasAddress
 {
 	private final String          name;
 	private final Address         address;
@@ -50,6 +50,7 @@ public class Shop implements Named
 		return this.name;
 	}
 
+	@Override
 	public Address address()
 	{
 		return this.address;
