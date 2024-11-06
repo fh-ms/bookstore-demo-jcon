@@ -31,10 +31,14 @@ public class Index<T> implements Closeable
 {
 	public static interface DocumentPopulator<T> extends BiConsumer<Document, T>
 	{
+		@Override
+		void accept(Document document, T entity);
 	}
 	
 	public static interface EntityMatcher<T> extends Function<Document, T>
 	{
+		@Override
+		T apply(Document document);
 	}
 
 	
