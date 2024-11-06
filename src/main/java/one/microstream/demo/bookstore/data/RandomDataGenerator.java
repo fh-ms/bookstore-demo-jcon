@@ -244,7 +244,7 @@ public class RandomDataGenerator
 		{
 			while(!this.usedIsbns.add(isbn = this.faker.code().isbn13(true)))
 			{
-				; // empty loop
+				// empty loop
 			}
 		}
 		final Genre          genre         = genres.get(this.random.nextInt(genres.size()));
