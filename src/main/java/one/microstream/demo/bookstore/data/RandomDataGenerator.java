@@ -140,12 +140,12 @@ public class RandomDataGenerator
 			Locale.GERMANY,
 			Locale.FRANCE,
 			Locale.UK,
-			new Locale("pt", "BR"),
-			new Locale("de", "AT"),
-			new Locale("fr", "CH"),
-			new Locale("nl", "NL"),
-			new Locale("hu", "HU"),
-			new Locale("pl", "PL")
+			Locale.of("pt", "BR"),
+			Locale.of("de", "AT"),
+			Locale.of("fr", "CH"),
+			Locale.of("nl", "NL"),
+			Locale.of("hu", "HU"),
+			Locale.of("pl", "PL")
 		);
 
 		final int maxCountries = this.dataAmount.maxCountries();
