@@ -16,14 +16,14 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.QueryBuilder;
+import org.eclipse.serializer.concurrency.LockScope;
 import org.eclipse.serializer.persistence.types.Persister;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
 import one.microstream.demo.bookstore.data.Index.DocumentPopulator;
 import one.microstream.demo.bookstore.data.Index.EntityMatcher;
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 
-public class Books extends ReadWriteLocked
+public class Books extends LockScope
 {
 	/*
 	 * Multiple maps holding references to the books, for a faster lookup.

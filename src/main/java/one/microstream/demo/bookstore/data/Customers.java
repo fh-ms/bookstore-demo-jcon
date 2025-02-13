@@ -9,12 +9,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.serializer.concurrency.LockScope;
 import org.eclipse.serializer.persistence.types.Persister;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 
-public class Customers extends ReadWriteLocked
+public class Customers extends LockScope
 {
 	private final Map<Integer, Customer> customers = new HashMap<>();
 
