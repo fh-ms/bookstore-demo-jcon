@@ -17,18 +17,18 @@ import java.util.stream.Stream;
 
 import javax.money.MonetaryAmount;
 
+import org.eclipse.serializer.concurrency.LockScope;
 import org.eclipse.serializer.persistence.types.Persister;
 
 import com.google.common.collect.Range;
 
 import one.microstream.demo.bookstore.BookStoreDemo;
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.gigamap.Condition;
 import one.microstream.gigamap.GigaMap;
 import one.microstream.gigamap.GigaQuery;
 
 
-public class Purchases extends ReadWriteLocked
+public class Purchases extends LockScope
 {
 	private final GigaMap<Purchase> map = GigaMap.<Purchase>Builder()
 		.withBitmapIndex(Purchase.yearIndex)

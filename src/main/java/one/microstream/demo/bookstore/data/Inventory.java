@@ -11,9 +11,9 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
+import org.eclipse.serializer.concurrency.LockScope;
 
-public class Inventory extends ReadWriteLocked
+public class Inventory extends LockScope
 {
 	private final Map<Book, Integer> inventoryMap;
 

@@ -6,14 +6,14 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.eclipse.serializer.concurrency.LockScope;
 import org.eclipse.serializer.persistence.types.Persister;
 
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.gigamap.Condition;
 import one.microstream.gigamap.GigaMap;
 import one.microstream.gigamap.GigaQuery;
 
-public class Books extends ReadWriteLocked
+public class Books extends LockScope
 {
 	private final GigaMap<Book> map = GigaMap.<Book>Builder()
 		.withBitmapIdentityIndex(Book.isbn13Index)

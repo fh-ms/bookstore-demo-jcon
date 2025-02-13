@@ -4,14 +4,14 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.eclipse.serializer.concurrency.LockScope;
 import org.eclipse.serializer.persistence.types.Persister;
 
-import one.microstream.demo.bookstore.util.concurrent.ReadWriteLocked;
 import one.microstream.gigamap.Condition;
 import one.microstream.gigamap.GigaMap;
 import one.microstream.gigamap.GigaQuery;
 
-public class Customers extends ReadWriteLocked
+public class Customers extends LockScope
 {
 	private final GigaMap<Customer> map = GigaMap.<Customer>Builder()
 		.withBitmapIdentityIndex(Customer.idIndex)
