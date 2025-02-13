@@ -1,31 +1,32 @@
 package one.microstream.demo.bookstore.data;
 
 import one.microstream.gigamap.Indexer;
+import one.microstream.gigamap.IndexerString;
 
 public interface HasAddress
 {
-	public static final Indexer.AbstractString<HasAddress> address1Index = new Indexer.AbstractString<>()
+	public static final IndexerString<HasAddress> address1Index = new IndexerString.Abstract<>()
 	{
 		@Override
-		public String indexEntity(final HasAddress entity)
+		public String getString(final HasAddress entity)
 		{
 			return entity.address().address();
 		}
 	};
 
-	public static final Indexer.AbstractString<HasAddress> address2Index = new Indexer.AbstractString<>()
+	public static final IndexerString<HasAddress> address2Index = new IndexerString.Abstract<>()
 	{
 		@Override
-		public String indexEntity(final HasAddress entity)
+		public String getString(final HasAddress entity)
 		{
 			return entity.address().address2();
 		}
 	};
 
-	public static final Indexer.AbstractString<HasAddress> zipcodeIndex = new Indexer.AbstractString<>()
+	public static final IndexerString<HasAddress> zipcodeIndex = new IndexerString.Abstract<>()
 	{
 		@Override
-		public String indexEntity(final HasAddress entity)
+		public String getString(final HasAddress entity)
 		{
 			return entity.address().zipCode();
 		}

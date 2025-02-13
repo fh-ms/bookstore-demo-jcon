@@ -5,14 +5,14 @@ import static java.util.Objects.requireNonNull;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requireNonBlank;
 import static one.microstream.demo.bookstore.util.ValidationUtils.requirePositive;
 
-import one.microstream.gigamap.Indexer;
+import one.microstream.gigamap.IndexerInteger;
 
 public class Customer implements Named, HasAddress
 {
-	public static final Indexer.AbstractInteger<Customer> idIndex = new Indexer.AbstractInteger<>()
+	public static final IndexerInteger<Customer> idIndex = new IndexerInteger.Abstract<>()
 	{
 		@Override
-		public Integer indexEntity(final Customer entity)
+		public Integer getInteger(final Customer entity)
 		{
 			return entity.customerId();
 		}

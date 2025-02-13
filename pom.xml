@@ -33,9 +33,9 @@
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<eclipsestore.version>2.0.0</eclipsestore.version>
+		<eclipsestore.version>2.1.1</eclipsestore.version>
 		<lucene.version>8.5.1</lucene.version>
-		<gigamap.version>1.0.0-beta1</gigamap.version>
+		<gigamap.version>1.0.0-beta2</gigamap.version>
 	</properties>
 
 	<dependencies>

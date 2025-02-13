@@ -1,13 +1,13 @@
 package one.microstream.demo.bookstore.data;
 
-import one.microstream.gigamap.Indexer;
+import one.microstream.gigamap.IndexerString;
 
 public interface Named extends Comparable<Named>
 {
-	public static final Indexer.AbstractString<Named> nameIndex = new Indexer.AbstractString<>()
+	public static final IndexerString<Named> nameIndex = new IndexerString.Abstract<>()
 	{
 		@Override
-		public String indexEntity(final Named entity)
+		public String getString(final Named entity)
 		{
 			return entity.name();
 		}
